@@ -1,0 +1,25 @@
+<!-- tasks/templates/manager_dashboard.html -->
+{% extends 'base.html' %}
+{% block content %}
+<h2>Manager Dashboard</h2>
+<a href="{% url 'create_task' %}" class="btn btn-primary mb-3">Create New Task</a>
+<h3>Assigned Tasks</h3>
+<div class="row">
+    {% for task in tasks %}
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ task.title }} ({{ task.task_type|title }})</h5>
+                <p class="card-text">{{ task.description }}</p>
+                <p><strong>Assignee:</strong> {{ task.assignee.username }}</p>
+                <p><strong>Deadline:</strong> {{ task.deadline }}</p>
+                <p><strong>Status:</strong> {{ task.status|title }}</p>
+                <p><strong>Progress:</strong> {{ task.progress }}%</p>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p>No tasks assigned.</p>
+    {% endfor %}
+</div>
+{% endblock %}

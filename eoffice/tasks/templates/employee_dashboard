@@ -1,0 +1,33 @@
+<!-- tasks/templates/employee_dashboard.html -->
+{% extends 'base.html' %}
+{% block content %}
+<h2>Employee Dashboard</h2>
+<h3>My Tasks</h3>
+<div class="row">
+    {% for task in tasks %}
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ task.title }} ({{ task.task_type|title }})</h5>
+                <p class="card-text">{{ task.description }}</p>
+                <p><strong>Deadline:</strong> {{ task.deadline }}</p>
+                <p><strong>Status:</strong> {{ task.status|title }}</p>
+                <p><strong>Progress:</strong> {{ task.progress }}%</p>
+                <form method="post" action="{% url 'update_task' task.id %}">
+                    {% csrf_token %}
+                    <label for="progress">Progress:</label>
+                    <input type="range" name="progress" min="0" max="100" value="{{ task.progress }}" oninput="this.nextElementSibling.value = this.value">
+                    <output>{{ task.progress }}</output>%
+                    <div class="mt-2">
+                        <button type="submit" name="status" value="in_progress" class="btn btn-warning">Mark In Progress</button>
+                        <button type="submit" name="status" value="completed" class="btn btn-success">Mark Completed</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p>No tasks assigned.</p>
+    {% endfor %}
+</div>
+{% endblock %}
