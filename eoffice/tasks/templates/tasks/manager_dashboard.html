@@ -1,101 +1,124 @@
 {% extends 'tasks/base.html' %}
-{% block title %}Manager Dashboard - E-Office{% endblock %}
+
 {% block content %}
-<h2>Manager Dashboard</h2>
+  <h1>Manager Dashboard</h1>
 
-<!-- Filters and Search -->
-<div class="mb-3">
-    <form method="get" class="row g-3">
-        <div class="col-md-4">
-            <label for="status" class="form-label">Filter by Status</label>
-            <select name="status" id="status" class="form-select">
-                <option value="">All Statuses</option>
-                {% for value, label in status_choices %}
-                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label for="assignee" class="form-label">Filter by Assignee</label>
-            <select name="assignee" id="assignee" class="form-select">
-                <option value="">All Assignees</option>
-                {% for user in assignees %}
-                    <option value="{{ user.username }}" {% if request.GET.assignee == user.username %}selected{% endif %}>{{ user.username }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label for="search" class="form-label">Search</label>
-            <input type="text" name="search" id="search" class="form-control" value="{{ request.GET.search|default:'' }}" placeholder="Search by title or description">
-        </div>
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary">Apply Filters</button>
-            <a href="{% url 'manager_dashboard' %}" class="btn btn-secondary">Clear Filters</a>
-        </div>
-    </form>
-</div>
+  <!-- Filter Form -->
+  <form method="get" class="mb-4">
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="status">Status</label>
+        <select name="status" id="status" class="form-control">
+          <option value="">All</option>
+          {% for status, label in status_choices %}
+            <option value="{{ status }}" {% if request.GET.status == status %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group col-md-4">
+        <label for="assignee">Assignee</label>
+        <select name="assignee" id="assignee" class="form-control">
+          <option value="">All</option>
+          {% for user in assignees %}
+            <option value="{{ user.username }}" {% if request.GET.assignee == user.username %}selected{% endif %}>{{ user.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group col-md-4">
+        <label for="search">Search</label>
+        <input type="text" name="search" id="search" class="form-control" value="{{ request.GET.search }}" placeholder="Search tasks...">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Filter</button>
+  </form>
 
-{% if tasks %}
+  <!-- Overdue Officers -->
+  {% if overdue_officers %}
+    <h2>Officers with Overdue Tasks</h2>
     <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Description</th>
-                <th>Assignee</th>
-                <th>Deadline</th>
-                <th>Status</th>
-                <th>Progress</th>
-                <th>File</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for task in tasks %}
-                <tr {% if task.deadline|date:"Y-m-d" <= now|date:"Y-m-d"|add:"3" and task.status != 'Signed and dispatched to CD/HM' %}class="table-warning"{% endif %}>
-                    <td>{{ task.title }}</td>
-                    <td>{{ task.description|truncatewords:20 }}</td>
-                    <td>{{ task.assignee.username }}</td>
-                    <td>{{ task.deadline }}</td>
-                    <td>{{ task.status }}</td>
-                    <td>
-                        <div class="progress">
-                            <div class="progress-bar" role="progressbar" style="width: {{ task.get_progress }}%;" aria-valuenow="{{ task.get_progress }}" aria-valuemin="0" aria-valuemax="100">{{ task.get_progress }}%</div>
-                        </div>
-                    </td>
-                    <td>
-                        {% if task.file %}
-                            <a href="{{ task.file.url }}" target="_blank">View File</a>
-                        {% else %}
-                            No file
-                        {% endif %}
-                    </td>
-                    <td>
-                        <form action="{% url 'task_status_update' task.pk %}" method="post" class="d-inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="status" value="Dispatched to officer">
-                            <button type="submit" class="btn btn-sm btn-primary" {% if task.status == 'Dispatched to officer' %}disabled{% endif %}>Dispatch</button>
-                        </form>
-                        <form action="{% url 'task_status_update' task.pk %}" method="post" class="d-inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="status" value="Draft">
-                            <button type="submit" class="btn btn-sm btn-primary" {% if task.status == 'Draft' %}disabled{% endif %}>Draft</button>
-                        </form>
-                        <form action="{% url 'task_status_update' task.pk %}" method="post" class="d-inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="status" value="Finalized draft">
-                            <button type="submit" class="btn btn-sm btn-primary" {% if task.status == 'Finalized draft' %}disabled{% endif %}>Finalize</button>
-                        </form>
-                        <form action="{% url 'task_status_update' task.pk %}" method="post" class="d-inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="status" value="Signed and dispatched to CD/HM">
-                            <button type="submit" class="btn btn-sm btn-primary" {% if task.status == 'Signed and dispatched to CD/HM' %}disabled{% endif %}>Sign & Dispatch</button>
-                        </form>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
+      <thead>
+        <tr>
+          <th>Officer</th>
+          <th>Overdue Tasks</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in overdue_officers %}
+          <tr>
+            <td>{{ item.officer.username }}</td>
+            <td>
+              <ul>
+                {% for task in item.tasks %}
+                  <li>{{ task.title }} (Deadline: {{ task.deadline|date:"Y-m-d H:i" }})</li>
+                {% endfor %}
+              </ul>
+            </td>
+            <td>
+              <a href="{{ item.reminder_url }}" class="btn btn-warning btn-sm">Send Reminder Banner</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
     </table>
-{% else %}
-    <p>No tasks available.</p>
-{% endif %}
+  {% else %}
+    <p>No officers with overdue tasks.</p>
+  {% endif %}
+
+  <!-- Task List -->
+  <h2>Tasks</h2>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Assignee</th>
+        <th>Status</th>
+        <th>Progress</th>
+        <th>Deadline</th>
+        <th>Countdown</th>
+        <th>File</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for task in tasks %}
+        <tr {% if task.countdown.is_overdue %}class="table-danger"{% endif %}>
+          <td>{{ task.title }}</td>
+          <td>{{ task.assignee.username }}</td>
+          <td>{{ task.get_status_display }}</td>
+          <td>{{ task.get_progress }}%</td>
+          <td>{{ task.deadline|date:"Y-m-d H:i" }}</td>
+          <td>
+            {% if task.countdown %}
+              {% if task.countdown.is_overdue %}
+                Overdue
+              {% else %}
+                {{ task.countdown.days }} days, {{ task.countdown.hours }} hours
+              {% endif %}
+            {% else %}
+              No deadline
+            {% endif %}
+          </td>
+          <td>
+            {% if task.file %}
+              <a href="{{ task.file.url }}" target="_blank">Download</a>
+            {% else %}
+              No file
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'task_update' task.pk %}" class="btn btn-sm btn-primary">Edit</a>
+            {% for status, label in status_choices %}
+              {% if status != task.status %}
+                <form action="{% url 'task_direct_status_update' task.pk status %}" method="post" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-secondary">{{ label }}</button>
+                </form>
+              {% endif %}
+            {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 {% endblock %}

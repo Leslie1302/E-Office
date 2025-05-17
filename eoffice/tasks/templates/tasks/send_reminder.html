@@ -1,0 +1,28 @@
+{% extends 'tasks/base.html' %}
+
+{% block content %}
+  <h1>Send Reminder to {{ assignee.username }}</h1>
+
+  {% if overdue_tasks %}
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="tasks" class="form-label">Select Overdue Tasks</label>
+        <select name="tasks" id="tasks" class="form-control" multiple>
+          {% for task in overdue_tasks %}
+            <option value="{{ task.id }}" selected>{{ task.title }} (Deadline: {{ task.deadline|date:"Y-m-d H:i" }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="message" class="form-label">Custom Message (Optional)</label>
+        <textarea name="message" id="message" class="form-control" rows="4" placeholder="Enter a custom message..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Send Reminder</button>
+      <a href="{% url 'manager_dashboard' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  {% else %}
+    <p>No overdue tasks for {{ assignee.username }}.</p>
+    <a href="{% url 'manager_dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
+  {% endif %}
+{% endblock %}
