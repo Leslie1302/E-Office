@@ -1,0 +1,7 @@
+{% extends 'tasks/base.html' %}
+{% block title %}Logout - E-Office{% endblock %}
+{% block content %}
+<h2>Logged Out</h2>
+<p>You have been successfully logged out.</p>
+<a href="{% url 'login' %}" class="btn btn-primary">Login Again</a>
+{% endblock %}
